@@ -1,0 +1,35 @@
+name: Pipeline DevSecOps
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  # 1. Sécurité
+  security-check:
+    name: 🛡️ Scan Trivy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          exit-code: '0' # On laisse passer pour tester la suite
+          severity: 'CRITICAL,HIGH'
+
+  # 2. Qualité (Configuré pour votre serveur ENI)
+  quality-check:
+    name: 🔍 Scan SonarQube
+    runs-on: ubuntu-latest
+    needs: security-check
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Important pour l'analyse
+
+      - name: SonarQube Scan
+        uses: sonarsource/sonarqube-scan-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
